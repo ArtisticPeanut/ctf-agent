@@ -76,6 +76,29 @@ uv run ctf-solve \
   -v
 ```
 
+## Operator Control Panel
+
+The report center also exposes a write-capable control page for managing keys, the
+solver lineup, engine lifecycle, and local challenge uploads:
+
+```bash
+uv run python -m tools.report_center
+# dashboard: http://127.0.0.1:8080/
+# control:   http://127.0.0.1:8080/control
+```
+
+It binds loopback by default. To let teammates reach it, set a strong
+`PANEL_TOKEN` in `.env` and bind a private interface (Tailscale, LAN, or an SSH
+tunnel); the server refuses non-loopback binding without a token. Secrets are
+write-only in the UI: the panel reports whether a key is set and at most its last
+four characters.
+
+Challenge uploads create `challenges/<slug>/metadata.yml` plus
+`challenges/<slug>/distfiles/`, and run the same adversarial-description
+sanitizer used by the ingest tool. The engine start/stop controls spawn
+`python -m backend.cli` with the saved `.env`, so a changed lineup takes effect
+on the next start.
+
 ## Coordinator Backends
 
 ```bash

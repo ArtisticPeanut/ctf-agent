@@ -40,7 +40,12 @@ USER_AGENT = "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, lik
 # ---------------------------------------------------------------------------
 
 def token_headers(token: str) -> dict:
-    return {"User-Agent": USER_AGENT, "Authorization": f"Token {token}"}
+    return {
+        "User-Agent": USER_AGENT,
+        "Authorization": f"Token {token}",
+        "Accept": "application/json",
+        "Content-Type": "application/json",
+    }
 
 
 async def login_password(session: aiohttp.ClientSession, base_url: str, username: str, password: str) -> bool:

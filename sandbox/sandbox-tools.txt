@@ -7,6 +7,12 @@ nc (netcat)        TCP/UDP connections. nc host port <<'EOF' for heredoc session
 curl               HTTP client. -s silent, -k skip TLS, -d data, -H header.
 wget               HTTP download. wget -O file url.
 nmap               Port scanner. nmap -sV host, nmap -p- host.
+ffuf               Web fuzzer. ffuf -w wordlist -u http://host/FUZZ
+gobuster           Directory/DNS/vhost brute force. gobuster dir -u http://host -w wordlist
+
+== PASSWORD CRACKING ==
+hashcat            GPU/CPU hash cracker. hashcat -m 0 -a 0 hashes.txt wordlist.txt
+john               John the Ripper. john --wordlist=wordlist hashes.txt
 
 == BINARY ANALYSIS ==
 file               Identify file type. file binary
@@ -23,6 +29,11 @@ gdb                GNU debugger. gdb binary, then run, break, info, x/...
 ltrace             Library call tracer. ltrace ./binary
 strace             System call tracer. strace ./binary
 radare2            Reverse engineering. r2 binary, then aaa; pdf @main; afl
+gdb + gef          GDB with GEF loaded (source /opt/gef.py). gef help.
+patchelf           Edit ELF interpreter/RPATH. patchelf --set-interpreter ... binary
+upx                Packer/unpacker. upx -d packed_binary
+one_gadget         Find one-shot execve gadgets in libc. one_gadget /lib/x86_64-linux-gnu/libc.so.6
+qemu-user-static   Run foreign-arch binaries. qemu-aarch64 ./arm64_binary
 
 == STEGANOGRAPHY ==
 steghide           Embed/extract in JPEG/BMP/WAV. steghide extract -sf file.jpg
@@ -99,10 +110,17 @@ volatility3        Memory forensics framework (Python API).
 torch              PyTorch (CPU). import torch — tensors, neural nets, ML inference.
 keras              Keras deep learning. import keras — model loading, inference.
 PyJWT              JWT encode/decode. import jwt; jwt.encode(payload, key, algorithm='HS256')
+scapy              Packet crafting. from scapy.all import *
+python-sat         SAT solver. from pysat.solvers import Glucose3
+ropper             ROP gadget search/chain building. from ropper import RopperService
+pyelftools         ELF parsing. from elftools.elf.elffile import ELFFile
+keystone-engine    Assembler. from keystone import Ks, KS_ARCH_X86
 
 == NOTES ==
-- Sandbox runs ARM64. Do NOT execute x86/x86-64 binaries locally.
-  Use Ghidra tools for RE, and interact with remote services for dynamic analysis.
+- Check the architecture first: `uname -m`. The image follows the host (amd64 on
+  x86-64 hosts, arm64 on Apple Silicon). Do NOT run binaries of the other arch
+  natively; use `qemu-user-static` for foreign-arch Linux binaries, or analyse
+  statically and interact with the remote service for dynamic behaviour.
 - Need a package not listed? Run `pip install <pkg>` or `uv pip install <pkg>`.
 - Distfiles are at /challenge/distfiles/ (read-only)
 - Write generated/repaired files to /challenge/workspace/ (writable)

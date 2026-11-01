@@ -16,6 +16,8 @@ class Settings(BaseSettings):
     anthropic_api_key: str = ""
     openai_api_key: str = ""
     gemini_api_key: str = ""
+    deepseek_api_key: str = ""
+    deepseek_base_url: str = "https://api.deepseek.com/v1"
 
     # Provider-specific (optional, for Bedrock/Azure/Zen fallback)
     aws_region: str = "us-east-1"
@@ -29,5 +31,11 @@ class Settings(BaseSettings):
     max_concurrent_challenges: int = 10
     max_attempts_per_challenge: int = 3
     container_memory_limit: str = "16g"
+
+    # Event tuning (optional)
+    ctf_models: str = ""  # comma-separated model specs; empty = DEFAULT_MODELS
+    ctf_msg_port: int = 9400
+    ctf_budget_usd: float = 0.0
+    ctf_total_hours: float = 15.0
 
     model_config = {"env_file": ".env", "env_file_encoding": "utf-8", "extra": "ignore"}

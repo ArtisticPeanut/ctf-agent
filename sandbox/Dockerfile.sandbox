@@ -42,7 +42,30 @@ RUN apt-get update && apt-get install -y \
     sagemath \
     # CADO-NFS build deps
     libhwloc-dev libbz2-dev \
+    # Extra CTF toolchain
+    hashcat john sqlmap tshark patchelf qemu-user-static upx-ucl python3-venv \
     && rm -rf /var/lib/apt/lists/*
+
+# gobuster is packaged in some Ubuntu mirrors but not all; do not fail the build
+RUN apt-get update && (apt-get install -y gobuster || echo "gobuster unavailable") \
+    && rm -rf /var/lib/apt/lists/*
+
+# ffuf (not packaged in Ubuntu 22.04) - download the release binary
+RUN ARCH=$(dpkg --print-architecture) \
+    && case "$ARCH" in \
+         amd64) FFUF=ffuf_2.1.0_linux_amd64.tar.gz ;; \
+         arm64) FFUF=ffuf_2.1.0_linux_arm64.tar.gz ;; \
+         *) FFUF="" ;; \
+       esac \
+    && if [ -n "$FFUF" ]; then \
+         (curl -fsSL "https://github.com/ffuf/ffuf/releases/download/v2.1.0/$FFUF" -o /tmp/ffuf.tgz \
+          && tar -xzf /tmp/ffuf.tgz -C /usr/local/bin ffuf \
+          && chmod +x /usr/local/bin/ffuf \
+          && rm -f /tmp/ffuf.tgz) \
+         || echo "ffuf download failed (non-fatal)"; \
+       else \
+         echo "ffuf: unsupported arch $ARCH"; \
+       fi
 
 # ── Podman (nested containers — run challenge Docker images inside sandbox) ───
 # Ubuntu 22.04 needs the kubic repo for podman
@@ -77,7 +100,13 @@ RUN curl -LsSf https://astral.sh/uv/install.sh | sh
 ENV PATH="/root/.cargo/bin:/root/.local/bin:$PATH"
 
 # ── zsteg ─────────────────────────────────────────────────────────────────────
-RUN gem install zsteg
+RUN gem install zsteg \
+    && (gem install one_gadget || echo "one_gadget install failed (non-fatal)")
+
+# GEF (gdb enhanced features)
+RUN (curl -fsSL https://raw.githubusercontent.com/hugsy/gef/main/gef.py -o /opt/gef.py \
+     && echo "source /opt/gef.py" >> /root/.gdbinit) \
+    || echo "gef download failed (non-fatal)"
 
 # ── stegseek (build from source — pre-built .deb is amd64 only) ──────────────
 RUN apt-get update && apt-get install -y libmhash-dev libmcrypt-dev libjpeg-dev zlib1g-dev \
@@ -109,7 +138,16 @@ RUN pip3 install --no-cache-dir \
     flask \
     volatility3 \
     PyJWT \
-    pyghidra
+    pyghidra \
+    scapy \
+    python-sat \
+    ropper \
+    keystone-engine \
+    pyelftools
+
+# Decompilers are version-sensitive on Python 3.10; never fail the build over them
+RUN (pip3 install --no-cache-dir uncompyle6 decompyle3 \
+     || echo "decompilers unavailable on this Python (non-fatal)")
 
 # ── PyTorch (CPU-only) + Keras ────────────────────────────────────────────────
 RUN pip3 install --no-cache-dir --ignore-installed sympy \

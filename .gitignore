@@ -21,6 +21,9 @@ build/
 .ruff_cache/
 uv.lock
 
+# Reports (contain flags and cost data; keep local during the event)
+reports/
+
 # Runtime
 workspace/
 codex-schema-*/

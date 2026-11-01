@@ -22,6 +22,7 @@ from backend.agents.coordinator_core import (
 from backend.agents.coordinator_loop import build_deps, run_event_loop
 from backend.config import Settings
 from backend.deps import CoordinatorDeps
+from backend.models import codex_argv
 
 logger = logging.getLogger(__name__)
 
@@ -149,7 +150,7 @@ class CodexCoordinator:
 
     async def start(self) -> None:
         self._proc = await asyncio.create_subprocess_exec(
-            "codex", "app-server",
+            *codex_argv(), "app-server",
             stdin=asyncio.subprocess.PIPE,
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.DEVNULL,

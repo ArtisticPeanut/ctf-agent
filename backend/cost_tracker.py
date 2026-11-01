@@ -19,6 +19,7 @@ PROVIDER_MAP: dict[str, str] = {
     "zen": "openai",
     "codex": "openai",
     "google": "google",
+    "deepseek": "deepseek",
 }
 
 # Fallback pricing for models not in genai-prices (per 1M tokens, USD)
@@ -57,6 +58,17 @@ FALLBACK_PRICING: dict[str, dict[str, float]] = {
         "input": 0.15,
         "cached_input": 0.02,
         "output": 0.60,
+    },
+    # DeepSeek peak rates (off-peak is half), used so budgets are not undercounted.
+    "deepseek-flash": {
+        "input": 0.30,
+        "cached_input": 0.006,
+        "output": 1.20,
+    },
+    "deepseek-v4-pro": {
+        "input": 1.32,
+        "cached_input": 0.044,
+        "output": 3.96,
     },
 }
 

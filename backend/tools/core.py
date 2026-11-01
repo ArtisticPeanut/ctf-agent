@@ -1,6 +1,7 @@
 """SDK-agnostic tool logic — pure async functions, no Pydantic AI types."""
 
 import json
+import os
 import shlex
 from pathlib import Path
 
@@ -104,8 +105,26 @@ def _is_internal_url(url: str) -> bool:
     return False
 
 
+def _is_cloud_metadata_url(url: str) -> bool:
+    """Always block cloud metadata endpoints, even when private fetch is allowed."""
+    from urllib.parse import urlparse
+    host = (urlparse(url).hostname or "").lower()
+    return host in ("169.254.169.254", "metadata.google.internal", "metadata")
+
+
+def _private_fetch_blocked() -> bool:
+    """Private/LAN fetch is allowed by default (CTFd and services are often on LAN).
+
+    Set CTF_BLOCK_PRIVATE_FETCH=1 to restore the upstream block.
+    """
+    value = os.environ.get("CTF_BLOCK_PRIVATE_FETCH", "").strip().lower()
+    return value in ("1", "true", "yes", "on")
+
+
 async def do_web_fetch(url: str, method: str = "GET", body: str = "") -> str:
-    if _is_internal_url(url):
+    if _is_cloud_metadata_url(url):
+        return "Fetch error: cloud metadata endpoints are blocked."
+    if _private_fetch_blocked() and _is_internal_url(url):
         return "Fetch error: access to internal/private networks is blocked."
     try:
         # verify=False: CTF challenge services often use self-signed certs

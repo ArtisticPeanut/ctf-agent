@@ -4,7 +4,7 @@ version = "0.1.0"
 description = "CTF agent v2 — multi-model solver swarm"
 requires-python = ">=3.14"
 dependencies = [
-    "pydantic-ai[bedrock,openai,google]",
+    "pydantic-ai[bedrock,openai,google]>=1.0,<2",
     "pydantic-settings",
     "genai-prices",
     "boto3",
@@ -15,6 +15,8 @@ dependencies = [
     "rich",
     "click",
     "markdownify",
+    "aiohttp",
+    "beautifulsoup4",
 ]
 
 [project.scripts]
@@ -48,7 +50,11 @@ select = ["E", "F", "I", "UP", "B", "SIM", "N", "C4", "PTH"]
 ignore = ["E501", "SIM105", "SIM115", "PTH123"]
 
 [tool.ruff.lint.isort]
-known-first-party = ["backend"]
+known-first-party = ["backend", "tools"]
+
+[tool.ruff.lint.per-file-ignores]
+"backend/agents/*.py" = ["SIM102", "F841"]
+"pull_challenges.py" = ["I001", "UP045"]
 
 [tool.ty.rules]
 unresolved-import = "ignore"

@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+import os
+import shutil
+from pathlib import Path
 from typing import TYPE_CHECKING
 
 import boto3
@@ -35,6 +38,8 @@ CONTEXT_WINDOWS: dict[str, int] = {
     "gpt-5.3-codex": 1_000_000,
     "gpt-5.3-codex-spark": 128_000,
     "gemini-3-flash-preview": 1_000_000,
+    "deepseek-flash": 1_048_576,
+    "deepseek-v4-pro": 1_048_576,
 }
 
 # Models that support vision
@@ -44,6 +49,7 @@ VISION_MODELS: set[str] = {
     "gpt-5.4",
     "gpt-5.4-mini",
     "gemini-3-flash-preview",
+    "deepseek-flash",
 }
 
 
@@ -74,6 +80,14 @@ def resolve_model(spec: str, settings: Settings) -> Model:
                 provider=OpenAIProvider(
                     base_url=settings.azure_openai_endpoint,
                     api_key=settings.azure_openai_api_key,
+                ),
+            )
+        case "deepseek":
+            return OpenAIModel(
+                model_id,
+                provider=OpenAIProvider(
+                    base_url=settings.deepseek_base_url,
+                    api_key=settings.deepseek_api_key,
                 ),
             )
         case "zen":
@@ -110,11 +124,19 @@ def resolve_model_settings(spec: str) -> ModelSettings:
                 bedrock_cache_messages=True,
             )
         case "azure" | "zen":
-            # Azure/Zen use OpenAI chat completions — server-side prompt caching
+            # Azure/Zen use OpenAI chat completions - server-side prompt caching
             # is automatic, no explicit config needed. Set max_tokens to avoid
             # reserving the full context window.
             return OpenAIModelSettings(
                 max_tokens=128_000,
+            )
+        case "deepseek":
+            # DeepSeek V4 thinks by default and rejects a forced tool_choice in
+            # thinking mode. Structured output needs the forced output tool, so
+            # disable thinking.
+            return OpenAIModelSettings(
+                max_tokens=128_000,
+                extra_body={"thinking": {"type": "disabled"}},
             )
         case "google":
             return GoogleModelSettings(
@@ -126,6 +148,26 @@ def resolve_model_settings(spec: str) -> ModelSettings:
             )
         case _:
             return ModelSettings(max_tokens=128_000)
+
+
+def codex_argv() -> list[str]:
+    """Return an argv prefix that launches the Codex CLI on this platform.
+
+    Windows installs expose `codex` as a .cmd shim, which cannot be passed
+    directly to create_subprocess_exec. Prefer the underlying node entrypoint
+    so process termination reaches the real process.
+    """
+    exe = shutil.which("codex")
+    if not exe:
+        raise FileNotFoundError("codex CLI not found on PATH")
+    path = Path(exe)
+    if os.name == "nt" and path.suffix.lower() in {".cmd", ".bat"}:
+        script = path.parent / "node_modules" / "@openai" / "codex" / "bin" / "codex.js"
+        node = shutil.which("node")
+        if node and script.is_file():
+            return [node, str(script)]
+        return ["cmd.exe", "/c", str(path)]
+    return [str(path)]
 
 
 def model_id_from_spec(spec: str) -> str:

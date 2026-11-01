@@ -1,0 +1,47 @@
+CTF access and setup notes
+
+1) Panel status
+- The panel is reachable at http://127.0.0.1:8080/
+- It is loopback-only by default unless PANEL_TOKEN is set and a non-loopback host is used.
+
+2) Current platform config
+- Configured CTFd URL: https://ctf.imbank.com
+- This host resolves correctly and the homepage responds with HTTP 200.
+- However, API requests to /api/v1/challenges?per_page=1 redirect to /login and return HTML instead of JSON.
+- This means the configured token is not accepted, or API access is not enabled for the account.
+
+3) Request pattern that works
+- Valid CTFd API request example:
+  curl.exe -sS -D - -H "Authorization: Token $env:CTFD_TOKEN" -H "Accept: application/json" "https://ctf.imbank.com/api/v1/challenges?per_page=1"
+- The request format is correct; the problem is auth/access, not the syntax.
+
+4) Tunnel route
+- Tunnel script exists at tools/ssh-tls-tunnel.sh
+- It creates a SOCKS proxy on 127.0.0.1:1080 and uses TLS/SSH forwarding.
+- The tunnel is not currently running on this machine (no local listener on 1080).
+- Once running, the proxy form is:
+  curl.exe -sS -D - --proxy "socks5h://127.0.0.1:1080" -H "Authorization: Token $env:CTFD_TOKEN" -H "Accept: application/json" "https://ctf.imbank.com/api/v1/challenges?per_page=1"
+
+5) Offline validation
+- We validated the exact request pattern against a mock local CTFd endpoint, and it returned HTTP 200 + JSON.
+- This confirms the request format is valid when the server authorizes it.
+
+6) Solver readiness
+- ctf-solve CLI is installed and starts.
+- However, the live challenge API is not yet ready:
+  - CTFd reachable check fails because the API redirects to login
+  - Docker daemon is not running
+  - Codex auth is not active
+- The agent process can run in --no-submit mode, but a live challenge run is not presently ready.
+
+7) Real action needed
+- Confirm with the CTF platform admin that:
+  - the token is a valid CTFd API token
+  - the token belongs to an account permitted to access the API
+  - the API is enabled for the event platform
+- Once that is fixed, update the panel CTFd settings and re-test the challenge API.
+
+8) Current local safe status
+- Panel is up on loopback.
+- Local mock API test confirms request syntax is correct.
+- Live platform access remains blocked by authorization or platform configuration.

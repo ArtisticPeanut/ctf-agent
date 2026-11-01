@@ -36,10 +36,10 @@ def _setup_logging(verbose: bool = False) -> None:
 @click.option("--challenge", default=None, help="Solve a single challenge directory")
 @click.option("--challenges-dir", default="challenges", help="Directory for challenge files")
 @click.option("--no-submit", is_flag=True, help="Dry run — don't submit flags")
-@click.option("--coordinator-model", default=None, help="Model for coordinator (default: claude-opus-4-6)")
+@click.option("--coordinator-model", default=None, help="Model for coordinator (claude: claude-opus-4-6, codex: gpt-5.4)")
 @click.option("--coordinator", default="claude", type=click.Choice(["claude", "codex"]), help="Coordinator backend")
-@click.option("--max-challenges", default=10, type=int, help="Max challenges solved concurrently")
-@click.option("--msg-port", default=0, type=int, help="Operator message port (0 = auto)")
+@click.option("--max-challenges", default=None, type=int, help="Max challenges solved concurrently (default: MAX_CONCURRENT_CHALLENGES)")
+@click.option("--msg-port", default=None, type=int, help="Operator message port (default: CTF_MSG_PORT, 0 = auto)")
 @click.option("-v", "--verbose", is_flag=True, help="Verbose logging")
 def main(
     ctfd_url: str | None,
@@ -51,8 +51,8 @@ def main(
     no_submit: bool,
     coordinator_model: str | None,
     coordinator: str,
-    max_challenges: int,
-    msg_port: int,
+    max_challenges: int | None,
+    msg_port: int | None,
     verbose: bool,
 ) -> None:
     """CTF Agent — multi-model solver swarm.
@@ -66,9 +66,19 @@ def main(
         settings.ctfd_url = ctfd_url
     if ctfd_token:
         settings.ctfd_token = ctfd_token
-    settings.max_concurrent_challenges = max_challenges
+    if max_challenges is not None:
+        settings.max_concurrent_challenges = max_challenges
+    if msg_port is not None:
+        settings.ctf_msg_port = msg_port
+    max_challenges = settings.max_concurrent_challenges
+    msg_port = settings.ctf_msg_port
 
-    model_specs = list(models) if models else list(DEFAULT_MODELS)
+    if models:
+        model_specs = list(models)
+    elif settings.ctf_models.strip():
+        model_specs = [s.strip() for s in settings.ctf_models.split(",") if s.strip()]
+    else:
+        model_specs = list(DEFAULT_MODELS)
 
     console.print("[bold]CTF Agent v2[/bold]")
     console.print(f"  CTFd: {settings.ctfd_url}")

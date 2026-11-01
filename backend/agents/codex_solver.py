@@ -18,12 +18,13 @@ import itertools
 import json
 import logging
 import time
+from pathlib import Path
 from typing import Any
 
 from backend.cost_tracker import CostTracker
 from backend.ctfd import CTFdClient
 from backend.loop_detect import LoopDetector
-from backend.models import model_id_from_spec, supports_vision
+from backend.models import codex_argv, model_id_from_spec, supports_vision
 from backend.output_types import solver_output_json_schema
 from backend.prompts import ChallengeMeta, build_prompt, list_distfiles
 from backend.sandbox import DockerSandbox
@@ -184,7 +185,7 @@ class CodexSolver:
         )
 
         self._proc = await asyncio.create_subprocess_exec(
-            "codex", "app-server",
+            *codex_argv(), "app-server",
             stdin=asyncio.subprocess.PIPE,
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.DEVNULL,
@@ -212,7 +213,7 @@ class CodexSolver:
             "model": self.model_id,
             "personality": "pragmatic",
             "baseInstructions": sandbox_preamble + system_prompt,
-            "cwd": "/challenge",
+            "cwd": str(Path.cwd()),
             "approvalPolicy": "on-request",
             "sandbox": "read-only",
             "serviceTier": "flex",
